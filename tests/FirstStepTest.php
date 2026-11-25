@@ -113,6 +113,9 @@ class FirstStepTest extends TestCase
         $submission->data(['first_name' => 'Jane'])->save();
         $submission->finalize();
 
+        // Sent by the job rather than in the request: nothing on the submission means
+        // nothing was waiting on the answer.
+        $this->assertNull($submission->get('bamboo_ticket'));
         $this->assertNull($submission->get('bamboo_continuation'));
         Http::assertSentCount(1);
     }
