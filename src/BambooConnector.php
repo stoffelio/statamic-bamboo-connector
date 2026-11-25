@@ -56,7 +56,10 @@ class BambooConnector extends Connector
         // The first step of a two-step form is sent in the request that submitted it, so
         // the page can offer the second one. Queueing it again would only ask the CRM to
         // recognise its own duplicate.
-        if ($submission->has(SubmissionPayload::TICKET)) {
+        //
+        // Both halves of the condition matter: a second step carries the ticket its first
+        // step opened, and is the one thing that must still be sent from here.
+        if ($submission->form()->get(SubmissionPayload::FOLLOW_UP) && $submission->has(SubmissionPayload::TICKET)) {
             return null;
         }
 

@@ -80,6 +80,45 @@ if `intervention/image` is installed, and sent as it is if it is not.
 A file the CRM would refuse is dropped, logged, and left out of the field row rather than
 costing the whole submission — the lead matters more than the attachment.
 
+## Two-step forms
+
+A short form that captures the lead, and a longer one that appears the moment it lands and
+appends to the ticket the first one opened.
+
+Mark the first form as expecting a second, in its own YAML rather than as a field — what
+makes a form a first step was decided when it was built, and a hidden field would let
+whoever is filling it in decide instead:
+
+    bamboo_follow_up: true
+
+That form is then sent **in the request that submitted it**, not from the queue, because the
+page needs the ticket id and the continuation token that come back with it. They ride back
+in the submission JSON as `bamboo_ticket` and `bamboo_continuation`, set after the
+submission was saved so neither is written to disk. The timeout is short
+(`bamboo.first_step_timeout`, four seconds) and every failure is swallowed: the connection
+job still sends the lead, and only the offer of a second step is lost.
+
+The second form carries both values back as hidden fields:
+
+    -
+      handle: bamboo_ticket
+      field: { type: hidden, display: Ticket }
+    -
+      handle: bamboo_continuation
+      field: { type: hidden, display: Continuation }
+
+A submission carrying them is posted to `POST /api/submissions/{ticket}/continue` instead,
+and the CRM refuses it once the step has been completed. Every `bamboo_*` handle is stripped
+from the payload, so none of this reaches the CRM as patient data.
+
+A first step carrying a file upload is left to the queue, since an inline send is invisible
+to the countdown that keeps the temporary files alive. It will not offer a second step.
+
+**Rendering:** whatever renders these two forms has to fill the hidden fields from the first
+step's response, and must not let Alpine bind a hidden input — a form's `x-data` carries each
+field's default as it was written, so a binding posts `current_url` where the input holds the
+resolved URL.
+
 ## Retries
 
 The job is queued, retried five times with a growing backoff, and logs through `failed()`
