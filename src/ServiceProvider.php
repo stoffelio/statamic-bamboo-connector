@@ -2,12 +2,18 @@
 
 namespace Stoffelio\BambooConnector;
 
+use Statamic\Events\SubmissionFinalized;
 use Statamic\Providers\AddonServiceProvider;
+use Stoffelio\BambooConnector\Listeners\SendFirstStep;
 
 class ServiceProvider extends AddonServiceProvider
 {
     protected $formConnectors = [
         BambooConnector::class,
+    ];
+
+    protected $listen = [
+        SubmissionFinalized::class => [SendFirstStep::class],
     ];
 
     protected $vite = [

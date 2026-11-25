@@ -81,6 +81,12 @@ class SubmissionPresenter
             return true;
         }
 
+        // This addon's own plumbing: the first-step marker and the two fields that carry a
+        // second step back to its ticket. Patient data they are not.
+        if (str_starts_with($field->handle(), 'bamboo_')) {
+            return true;
+        }
+
         if (in_array($field->type(), [...self::DISPLAY_ONLY, ...self::VERIFICATION], true)) {
             return true;
         }

@@ -5,15 +5,11 @@ namespace Stoffelio\BambooConnector\Jobs;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Http\Client\Response;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Statamic\Contracts\Forms\Submission;
-use Stoffelio\BambooConnector\Submissions\Attachment;
-use Stoffelio\BambooConnector\Submissions\Attachments;
-use Stoffelio\BambooConnector\Submissions\SubmissionPayload;
+use Stoffelio\BambooConnector\Submissions\Sender;
 use Throwable;
 
 /**
@@ -36,7 +32,6 @@ class SendSubmission implements ShouldQueue
     public function __construct(
         public Submission $submission,
         public array $config = [],
-        public bool $expectsFollowUp = false,
     ) {}
 
     /** @return array<int, int> */
@@ -45,22 +40,25 @@ class SendSubmission implements ShouldQueue
         return [10, 30, 120, 600];
     }
 
-    public function handle(): void
+    public function handle(Sender $sender): void
     {
         $submission = $this->submission->form()->submission($this->submission->id()) ?? $this->submission;
 
-        $attachments = new Attachments($submission);
-        $files = $attachments->prepare();
+        $response = $sender->send($submission);
 
-        try {
-            $response = $this->send(new SubmissionPayload($submission, $this->expectsFollowUp, $files), $files);
-        } finally {
-            $attachments->cleanup();
+        // A refused second step is final: the step was already completed, or the ticket is
+        // not one the CRM will take. Retrying would only repeat the same answer.
+        if ($response->status() === 422 && $state = $response->json('state')) {
+            Log::warning('Bamboo: the second step of submission '.$submission->id().' was refused as '.$state.'.');
+
+            return;
         }
 
         $response->throw();
 
-        $this->reportMappingFailure($submission, $response);
+        if ($response->json('mapping_failed')) {
+            Log::warning('Bamboo: submission '.$submission->id().' became ticket '.$response->json('ticket_id').' but could not be mapped.');
+        }
     }
 
     public function failed(Throwable $exception): void
@@ -68,43 +66,5 @@ class SendSubmission implements ShouldQueue
         Log::error('Bamboo: submission '.$this->submission->id().' from '.$this->submission->form()->handle().' was not delivered.', [
             'exception' => $exception->getMessage(),
         ]);
-    }
-
-    /** @param  array<int, Attachment>  $files */
-    private function send(SubmissionPayload $payload, array $files): Response
-    {
-        $request = Http::acceptJson()
-            ->withToken(config('bamboo.token'))
-            ->connectTimeout(5)
-            ->timeout((int) config('bamboo.timeout', 20));
-
-        foreach ($files as $file) {
-            $request = $request->attach(
-                "files[{$file->handle}][]",
-                fopen($file->path, 'r'),
-                $file->filename,
-                ['Content-Type' => $file->mimeType],
-            );
-        }
-
-        return $files
-            ? $request->post($this->endpoint(), $payload->toMultipart())
-            : $request->asJson()->post($this->endpoint(), $payload->toArray());
-    }
-
-    private function endpoint(): string
-    {
-        return rtrim((string) config('bamboo.url'), '/').'/api/submissions';
-    }
-
-    /**
-     * A ticket the CRM stored but could not map is a 201 — the submission is safe and the
-     * team can see it, so retrying would only duplicate work. It still needs saying.
-     */
-    private function reportMappingFailure(Submission $submission, Response $response): void
-    {
-        if ($response->json('mapping_failed')) {
-            Log::warning('Bamboo: submission '.$submission->id().' became ticket '.$response->json('ticket_id').' but could not be mapped.');
-        }
     }
 }

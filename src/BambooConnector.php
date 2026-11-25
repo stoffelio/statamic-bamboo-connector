@@ -9,6 +9,7 @@ use Statamic\Fields\Blueprint as FieldsBlueprint;
 use Statamic\Forms\Connectors\Connector;
 use Statamic\Support\VueComponent;
 use Stoffelio\BambooConnector\Jobs\SendSubmission;
+use Stoffelio\BambooConnector\Submissions\SubmissionPayload;
 
 /**
  * Sends submissions to the Bamboo CRM.
@@ -52,6 +53,13 @@ class BambooConnector extends Connector
 
     protected function job(Submission $submission, array $connection): ?object
     {
+        // The first step of a two-step form is sent in the request that submitted it, so
+        // the page can offer the second one. Queueing it again would only ask the CRM to
+        // recognise its own duplicate.
+        if ($submission->has(SubmissionPayload::TICKET)) {
+            return null;
+        }
+
         if (! $this->isConfigured()) {
             Log::warning('Bamboo: submission '.$submission->id().' from '.$submission->form()->handle().' was not sent, because no CRM url or token is configured.');
 
