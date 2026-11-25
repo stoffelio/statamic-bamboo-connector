@@ -6,7 +6,7 @@ export default defineConfig({
     build: {
         outDir: 'resources/dist/build',
         emptyOutDir: true,
-        manifest: true,
+        manifest: 'manifest.json',
         rollupOptions: {
             input: 'resources/js/cp.js',
         },
