@@ -63,7 +63,7 @@ class SendFirstStep
 
     private function shouldSend(Submission $submission): bool
     {
-        if (! $submission->get(SubmissionPayload::FOLLOW_UP)) {
+        if (! $submission->form()->get(SubmissionPayload::FOLLOW_UP)) {
             return false;
         }
 

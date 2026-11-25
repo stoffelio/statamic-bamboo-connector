@@ -19,6 +19,7 @@ use Statamic\Contracts\Forms\Submission;
  */
 class SubmissionPayload
 {
+    /** A key on the form, not a field: see expectsFollowUp(). */
     public const FOLLOW_UP = 'bamboo_follow_up';
 
     public const TICKET = 'bamboo_ticket';
@@ -67,10 +68,14 @@ class SubmissionPayload
     /**
      * A first step says so, so the CRM issues a continuation token and flags the ticket as
      * waiting for the rest rather than letting it look complete.
+     *
+     * It reads `bamboo_follow_up: true` on the form rather than a hidden field, because
+     * what makes a form a first step was decided when it was built. A hidden field would
+     * let whoever is filling it in decide instead.
      */
     public function expectsFollowUp(): bool
     {
-        return (bool) $this->submission->get(self::FOLLOW_UP);
+        return (bool) $this->submission->form()->get(self::FOLLOW_UP);
     }
 
     /** @return array<string, string> */

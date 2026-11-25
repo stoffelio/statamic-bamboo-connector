@@ -155,15 +155,15 @@ class SendSubmissionTest extends TestCase
     {
         Http::fake(['*' => Http::response(['ticket_id' => 7], 201)]);
 
-        $submission = $this->submission([
+        $form = tap($this->form([
             $this->field('first_name', ['type' => 'short_answer', 'display' => 'First Name']),
-            $this->field('bamboo_follow_up', ['type' => 'hidden', 'display' => 'Follow up']),
-        ], ['first_name' => 'Jane', 'bamboo_follow_up' => '1']);
+        ])->set('bamboo_follow_up', true))->save();
+
+        $submission = tap($form->makeSubmission()->data(['first_name' => 'Jane']))->save();
 
         dispatch_sync(new SendSubmission($submission));
 
-        Http::assertSent(fn (Request $request) => $request->data()['expects_follow_up'] === true
-            && collect($request->data()['fields'])->pluck('handle')->doesntContain('bamboo_follow_up'));
+        Http::assertSent(fn (Request $request) => $request->data()['expects_follow_up'] === true);
     }
 
     #[Test]

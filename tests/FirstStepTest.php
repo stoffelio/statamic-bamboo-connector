@@ -84,7 +84,6 @@ class FirstStepTest extends TestCase
         $form = $this->connectedForm([
             $this->field('first_name', ['type' => 'short_answer', 'display' => 'First Name']),
             $this->field('passport_copy', ['type' => 'upload', 'display' => 'Passport Copy', 'max_files' => 1]),
-            $this->field('bamboo_follow_up', ['type' => 'hidden', 'display' => 'Follow up']),
         ]);
 
         $submission = tap($form->makeSubmission()->asPartial())->save();
@@ -92,7 +91,7 @@ class FirstStepTest extends TestCase
         $path = FormFileUpload::field(['handle' => 'passport_copy', 'max_files' => 1], $submission->id())
             ->upload([UploadedFile::fake()->create('scan.pdf', 12, 'application/pdf')]);
 
-        $submission->data(['first_name' => 'Jane', 'passport_copy' => $path, 'bamboo_follow_up' => '1'])->save();
+        $submission->data(['first_name' => 'Jane', 'passport_copy' => $path])->save();
         $submission->finalize();
 
         // Sent, but by the job: an inline send is invisible to the countdown that keeps
@@ -102,13 +101,13 @@ class FirstStepTest extends TestCase
     }
 
     #[Test]
-    public function it_ignores_an_ordinary_submission()
+    public function it_ignores_a_form_that_is_not_a_first_step()
     {
         Http::fake(['*' => Http::response(['ticket_id' => 42], 201)]);
 
-        $form = $this->connectedForm([
+        $form = tap($this->form([
             $this->field('first_name', ['type' => 'short_answer', 'display' => 'First Name']),
-        ]);
+        ])->connections([BambooConnector::handle() => [['id' => 'abc123']]]))->save();
 
         $submission = $form->makeSubmission()->asPartial();
         $submission->data(['first_name' => 'Jane'])->save();
@@ -123,13 +122,12 @@ class FirstStepTest extends TestCase
     {
         Http::fake();
 
-        $form = $this->form([
+        $form = tap($this->form([
             $this->field('first_name', ['type' => 'short_answer', 'display' => 'First Name']),
-            $this->field('bamboo_follow_up', ['type' => 'hidden', 'display' => 'Follow up']),
-        ]);
+        ])->set('bamboo_follow_up', true))->save();
 
         $submission = $form->makeSubmission()->asPartial();
-        $submission->data(['first_name' => 'Jane', 'bamboo_follow_up' => '1'])->save();
+        $submission->data(['first_name' => 'Jane'])->save();
         $submission->finalize();
 
         Http::assertNothingSent();
@@ -140,17 +138,21 @@ class FirstStepTest extends TestCase
         $form = $this->connectedForm([
             $this->field('first_name', ['type' => 'short_answer', 'display' => 'First Name']),
             $this->field('email', ['type' => 'email', 'display' => 'EMail']),
-            $this->field('bamboo_follow_up', ['type' => 'hidden', 'display' => 'Follow up']),
         ]);
 
         return (new SubmitForm)
             ->form($form)
-            ->submit(['first_name' => 'Jane', 'email' => 'jane@example.com', 'bamboo_follow_up' => '1'])
+            ->submit(['first_name' => 'Jane', 'email' => 'jane@example.com'])
             ->submission;
     }
 
+    /** A first step: connected to the CRM, and marked on the form as expecting a second. */
     private function connectedForm(array $fields)
     {
-        return tap($this->form($fields)->connections([BambooConnector::handle() => [['id' => 'abc123']]]))->save();
+        return tap(
+            $this->form($fields)
+                ->set('bamboo_follow_up', true)
+                ->connections([BambooConnector::handle() => [['id' => 'abc123']]])
+        )->save();
     }
 }
