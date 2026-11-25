@@ -1,0 +1,12 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@statamic/cms": "file:vendor/statamic/cms/resources/dist-package",
+        "vite": "^6.0.11"
+    }
+}

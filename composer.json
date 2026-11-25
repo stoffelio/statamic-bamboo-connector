@@ -1,0 +1,58 @@
+{
+    "name": "stoffelio/statamic-bamboo-connector",
+    "description": "Send Statamic form submissions to the Bamboo CRM as tickets",
+    "autoload": {
+        "psr-4": {
+            "Stoffelio\\BambooConnector\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stoffelio\\BambooConnector\\Tests\\": "tests"
+        }
+    },
+    "authors": [
+        {
+            "name": "Alexander Stoffel"
+        }
+    ],
+    "support": {
+        "email": "alex@stoffel.io"
+    },
+    "require": {
+        "statamic/cms": "^6.44"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0",
+        "laravel/pint": "^1.18"
+    },
+    "suggest": {
+        "intervention/image": "Resizes oversized image uploads before they are sent"
+    },
+    "config": {
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Bamboo Connector",
+            "description": "Send Statamic form submissions to the Bamboo CRM as tickets"
+        },
+        "laravel": {
+            "providers": [
+                "Stoffelio\\BambooConnector\\ServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "check": [
+            "@lint",
+            "@test"
+        ],
+        "lint": "pint --test",
+        "test": "phpunit"
+    }
+}
