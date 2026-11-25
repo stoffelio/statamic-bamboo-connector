@@ -35,13 +35,20 @@ Name a field for what it means and it maps itself:
 | `title` | the ticket title |
 | `source_url` | where the form was filled in |
 | `target_organization` | the partner the ticket is for |
-| `first_name`, `last_name`, `email`, `phone`, `gender`, `date_of_birth`, `nationality`, `passport_number`, `notes` | the patient |
+| `first_name`, `last_name`, `email`, `phone`, `gender`, `date_of_birth`, `nationality`, `passport_number` | the patient |
 | `patients` | a grid, one row per patient |
-| anything else | a label and value row in a comment, in form order |
+| `notes`, and anything else | a label and value row in a comment, in form order |
 
 `target_organization` may hold a CRM organization id, an organization name, or the id of a
 Statamic entry carrying a `crm_id` — a hospital picker, say, which is resolved here because
 the CRM has no idea what a Statamic id is.
+
+`notes` is deliberately not a patient field: the patient's notes belong to the team, so a
+visitor's own message becomes a comment row. Name a free-text field whatever reads best on
+the form — it lands in the same place either way.
+
+A file field whose handle contains **`passport`** starts the CRM's passport reader on
+arrival, so name it `passport_copy` rather than `document_1` when that is what it is.
 
 ## What is sent
 
