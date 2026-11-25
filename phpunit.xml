@@ -7,7 +7,7 @@
   </testsuites>
   <php>
     <env name="APP_ENV" value="testing"/>
-    <env name="APP_KEY" value="base64:ybcI9MKuhLnESRSuWDfnJQuohOXMBaynfbTC5Y5i1FE="/>
+    <env name="APP_KEY" value="base64:THoun0NIHJzaAiyE6KJkpuzW1X+oLJ0t3/J0ESBC8AM="/>
     <env name="BCRYPT_ROUNDS" value="4"/>
     <env name="CACHE_STORE" value="array"/>
     <env name="MAIL_MAILER" value="array"/>
