@@ -53,12 +53,12 @@ class BambooConnector extends Connector
 
     protected function job(Submission $submission, array $connection): ?object
     {
-        // The first step of a two-step form is sent in the request that submitted it, so
-        // the page can offer the second one. Queueing it again would only ask the CRM to
-        // recognise its own duplicate.
+        // A form that asks for more afterwards is sent in the request that submitted it, so
+        // the page can send the visitor on to the rest. Queueing it again would only ask
+        // the CRM to recognise its own duplicate.
         //
-        // Both halves of the condition matter: a second step carries the ticket its first
-        // step opened, and is the one thing that must still be sent from here.
+        // The ticket id is the proof that it went: SendFirstStep writes it only once the
+        // CRM has answered, so a send that timed out still leaves this job to do it.
         if ($submission->form()->get(SubmissionPayload::FOLLOW_UP) && $submission->has(SubmissionPayload::TICKET)) {
             return null;
         }

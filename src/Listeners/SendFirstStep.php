@@ -16,7 +16,7 @@ use Throwable;
  * Sends the first step of a two-step form while the visitor is still waiting.
  *
  * It happens here rather than in the connection job because the page needs the ticket id
- * and the continuation token that come back with the answer, and a queued job cannot put
+ * and the follow-up link that come back with the answer, and a queued job cannot put
  * anything into a response that has already been sent.
  *
  * The timeout is short and every failure is swallowed on purpose: a CRM that is down must

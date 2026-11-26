@@ -12,10 +12,6 @@ use Statamic\Contracts\Forms\Submission;
  * a list — so it is used whenever a submission carries no files. Files force multipart,
  * where everything is a string and nested keys have to be spelled out in brackets, and
  * `fields[0][value][]` is what the CRM's `fields.*` rules read.
- *
- * Which endpoint depends on the submission itself: one carrying a continuation token is
- * the second step of a form whose first step already made a ticket, so it is appended to
- * that ticket rather than opening another.
  */
 class SubmissionPayload
 {
@@ -23,8 +19,6 @@ class SubmissionPayload
     public const FOLLOW_UP = 'bamboo_follow_up';
 
     public const TICKET = 'bamboo_ticket';
-
-    public const CONTINUATION = 'bamboo_continuation';
 
     /** Where the CRM says the rest of this submission is asked for. */
     public const FOLLOW_UP_URL = 'bamboo_follow_up_url';
@@ -37,40 +31,26 @@ class SubmissionPayload
 
     public function endpoint(): string
     {
-        $base = rtrim((string) config('bamboo.url'), '/').'/api/submissions';
-
-        return $this->isSecondStep()
-            ? $base.'/'.$this->submission->get(self::TICKET).'/continue'
-            : $base;
-    }
-
-    public function isSecondStep(): bool
-    {
-        return filled($this->submission->get(self::CONTINUATION)) && filled($this->submission->get(self::TICKET));
+        return rtrim((string) config('bamboo.url'), '/').'/api/submissions';
     }
 
     /** @return array<string, mixed> */
     public function toArray(): array
     {
-        $payload = [
+        return [
             'external_id' => $this->submission->id(),
             'form' => [
                 'handle' => $this->submission->form()->handle(),
                 'title' => $this->submission->form()->title(),
             ],
             'fields' => SubmissionPresenter::for($this->submission, $this->attachments)->fields(),
+            'expects_follow_up' => $this->expectsFollowUp(),
         ];
-
-        if ($this->isSecondStep()) {
-            return [...$payload, 'continuation_token' => $this->submission->get(self::CONTINUATION)];
-        }
-
-        return [...$payload, 'expects_follow_up' => $this->expectsFollowUp()];
     }
 
     /**
-     * A first step says so, so the CRM issues a continuation token and flags the ticket as
-     * waiting for the rest rather than letting it look complete.
+     * A form that says so has the CRM issue a data request and send the patient to it, and
+     * the ticket is flagged as waiting for the rest rather than looking complete.
      *
      * It reads `bamboo_follow_up: true` on the form rather than a hidden field, because
      * what makes a form a first step was decided when it was built. A hidden field would

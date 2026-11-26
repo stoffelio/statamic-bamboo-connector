@@ -11,7 +11,7 @@ use Statamic\Contracts\Forms\Submission;
  *
  * Shared because the same send happens two ways: queued for an ordinary submission, and
  * in-request for the first step of a two-step form, which cannot be queued because the
- * page is waiting on the ticket id and the continuation token that come back with it.
+ * page is waiting on the ticket id and the follow-up link that come back with it.
  */
 class Sender
 {

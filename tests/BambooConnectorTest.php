@@ -72,28 +72,6 @@ class BambooConnectorTest extends TestCase
     }
 
     #[Test]
-    public function it_still_sends_a_second_step_that_carries_its_first_step_ticket()
-    {
-        Http::fake(['*' => Http::response(['ticket_id' => 42], 200)]);
-
-        $form = tap($this->form([
-            $this->field('passport_number', ['type' => 'short_answer', 'display' => 'Passport Number']),
-            $this->field('bamboo_ticket', ['type' => 'hidden', 'display' => 'Ticket']),
-            $this->field('bamboo_continuation', ['type' => 'hidden', 'display' => 'Continuation']),
-        ])->connections(['bamboo' => [['id' => 'abc123']]]))->save();
-
-        $submission = $form->makeSubmission()->asPartial();
-        $submission->data([
-            'passport_number' => 'X1234567',
-            'bamboo_ticket' => '42',
-            'bamboo_continuation' => 'the-token',
-        ])->save();
-        $submission->finalize();
-
-        Http::assertSent(fn (Request $request) => $request->url() === 'https://crm.example.com/api/submissions/42/continue');
-    }
-
-    #[Test]
     public function it_sends_nothing_when_the_crm_has_not_been_configured()
     {
         config()->set('bamboo.url', null);

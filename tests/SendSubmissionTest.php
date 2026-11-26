@@ -165,43 +165,4 @@ class SendSubmissionTest extends TestCase
 
         Http::assertSent(fn (Request $request) => $request->data()['expects_follow_up'] === true);
     }
-
-    #[Test]
-    public function it_appends_a_second_step_to_the_ticket_its_first_step_opened()
-    {
-        Http::fake(['*' => Http::response(['ticket_id' => 7], 200)]);
-
-        $submission = $this->submission([
-            $this->field('passport_number', ['type' => 'short_answer', 'display' => 'Passport Number']),
-            $this->field('bamboo_ticket', ['type' => 'hidden', 'display' => 'Ticket']),
-            $this->field('bamboo_continuation', ['type' => 'hidden', 'display' => 'Continuation']),
-        ], ['passport_number' => 'X1234567', 'bamboo_ticket' => '42', 'bamboo_continuation' => 'the-token']);
-
-        dispatch_sync(new SendSubmission($submission));
-
-        Http::assertSent(function (Request $request) {
-            $body = $request->data();
-
-            return $request->url() === 'https://crm.example.com/api/submissions/42/continue'
-                && $body['continuation_token'] === 'the-token'
-                && ! array_key_exists('expects_follow_up', $body)
-                && collect($body['fields'])->pluck('handle')->all() === ['passport_number'];
-        });
-    }
-
-    #[Test]
-    public function it_does_not_retry_a_second_step_the_crm_has_refused()
-    {
-        Http::fake(['*' => Http::response(['message' => 'This form has already been completed', 'state' => 'spent'], 422)]);
-
-        $submission = $this->submission([
-            $this->field('passport_number', ['type' => 'short_answer', 'display' => 'Passport Number']),
-            $this->field('bamboo_ticket', ['type' => 'hidden', 'display' => 'Ticket']),
-            $this->field('bamboo_continuation', ['type' => 'hidden', 'display' => 'Continuation']),
-        ], ['passport_number' => 'X1234567', 'bamboo_ticket' => '42', 'bamboo_continuation' => 'spent-token']);
-
-        dispatch_sync(new SendSubmission($submission));
-
-        Http::assertSentCount(1);
-    }
 }
