@@ -46,6 +46,18 @@ class FollowUpPageTest extends TestCase
         $this->get('/follow-up/1795/the-token')->assertOk()->assertSee('Site chrome');
     }
 
+    /**
+     * The layout builds the document title out of the cascade, and a page with nothing in
+     * it there arrives in somebody's tab as a bare site name.
+     */
+    #[Test]
+    public function it_gives_the_layout_a_title_to_render()
+    {
+        Http::fake(['*' => Http::response(self::OPEN)]);
+
+        $this->get('/follow-up/1795/the-token')->assertSee('<title>A few more details</title>', false);
+    }
+
     #[Test]
     public function it_renders_what_the_crm_asked_for()
     {

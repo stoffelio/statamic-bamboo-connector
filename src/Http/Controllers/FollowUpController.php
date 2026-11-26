@@ -29,18 +29,22 @@ class FollowUpController extends Controller
         $answer = $this->ask('get', $dataRequest, $token);
 
         if ($answer === null) {
-            return $this->render('unavailable', ['state' => 'unknown'], 404);
+            return $this->render('unavailable', ['title' => 'No longer available', 'state' => 'unknown'], 404);
         }
 
         $state = $answer['state'] ?? 'unknown';
 
         return $state === 'open'
             ? $this->render('form', [
+                'title' => 'A few more details',
                 'request' => $answer,
                 'path' => $this->path($dataRequest, $token),
                 'errors' => session('bamboo_follow_up_error') ? ['We could not send that just now. Please try again in a moment.'] : [],
             ])
-            : $this->render('unavailable', ['state' => $state], 410);
+            : $this->render('unavailable', [
+                'title' => $state === 'submitted' ? 'Already sent' : 'No longer available',
+                'state' => $state,
+            ], 410);
     }
 
     public function submit(Request $request, string $dataRequest, string $token): Response|RedirectResponse
@@ -57,7 +61,7 @@ class FollowUpController extends Controller
             return back()->withInput()->with('bamboo_follow_up_error', true);
         }
 
-        return $this->render('done', ['state' => $answer['state'] ?? 'submitted']);
+        return $this->render('done', ['title' => 'Thank you', 'state' => $answer['state'] ?? 'submitted']);
     }
 
     /**

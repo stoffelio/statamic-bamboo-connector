@@ -26,7 +26,8 @@ abstract class TestCase extends AddonTestCase
 
         if (! file_exists($layout)) {
             @mkdir(dirname($layout), recursive: true);
-            file_put_contents($layout, '<html><body><header>Site chrome</header>{{ template_content }}</body></html>');
+            file_put_contents($layout, '<html><head><title>{{ title }}</title></head>'
+                .'<body><header>Site chrome</header>{{ template_content }}</body></html>');
         }
     }
 
