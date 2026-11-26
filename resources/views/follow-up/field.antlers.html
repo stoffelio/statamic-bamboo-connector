@@ -2,7 +2,15 @@
 {{ file_class = "block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-surface file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700" }}
 
 {{ if type == 'passport' }}
-    <div class="md:col-span-2" x-data="{ tab: 'upload' }">
+    <div class="md:col-span-2" x-data="{
+            tab: 'upload',
+            uploaded: false,
+            typed: false,
+            sync() {
+                this.uploaded = this.$refs.upload.files.length > 0
+                this.typed = [...this.$refs.manual.querySelectorAll('input, select')].some((field) => field.value.trim() !== '')
+            },
+        }" x-on:input="sync()" x-on:change="sync()">
         <p class="text-sm font-semibold">{{ label }}</p>
         {{ if instructions }}
             <p class="pb-2 text-sm">{{ instructions }}</p>
@@ -24,12 +32,13 @@
         </div>
 
         <div class="pt-4" x-show="tab === 'upload'" role="tabpanel">
-            <input type="file" name="files[{{ key }}][]" accept="image/*,application/pdf" class="{{ file_class }}">
+            <input type="file" name="files[{{ key }}][]" accept="image/*,application/pdf" class="{{ file_class }}"
+                x-ref="upload"{{ if required }} x-bind:required="tab === 'upload' && !typed"{{ /if }}>
         </div>
 
-        <div class="grid gap-4 pt-4 md:grid-cols-2" x-show="tab === 'manual'" x-cloak="display" role="tabpanel">
+        <div class="grid gap-4 pt-4 md:grid-cols-2" x-show="tab === 'manual'" x-cloak="display" role="tabpanel" x-ref="manual">
             {{ fields }}
-                {{ partial src="bamboo-connector::follow-up.field" :section="section" /}}
+                {{ partial src="bamboo-connector::follow-up.field" :section="section" group="passport" /}}
             {{ /fields }}
         </div>
     </div>
@@ -91,7 +100,7 @@
                 <input type="hidden" name="answers[{{ section }}][{{ key }}]" x-bind:value="combined">
             </div>
         {{ elseif options }}
-            <select id="{{ key }}" name="answers[{{ section }}][{{ key }}]" class="{{ input_class }}"{{ if required }} required{{ /if }}>
+            <select id="{{ key }}" name="answers[{{ section }}][{{ key }}]" class="{{ input_class }}"{{ if required }}{{ if group == 'passport' }} x-bind:required="tab === 'manual' && !uploaded"{{ else }} required{{ /if }}{{ /if }}>
                 <option value="">{{ trans key="Please select..." }}</option>
                 {{ foreach:options as="option|option_label" }}
                     <option value="{{ option }}"{{ if option == value }} selected{{ /if }}>{{ option_label }}</option>
@@ -100,10 +109,10 @@
         {{ elseif input == 'textarea' }}
             <textarea id="{{ key }}" name="answers[{{ section }}][{{ key }}]" rows="5"
                 class="w-full px-4 py-1.5 bg-white text-black border-2 border-white rounded-md focus:border-highlight"
-                {{ if required }}required{{ /if }}>{{ value }}</textarea>
+                {{ if required }}{{ if group == 'passport' }}x-bind:required="tab === 'manual' && !uploaded"{{ else }}required{{ /if }}{{ /if }}>{{ value }}</textarea>
         {{ else }}
             <input id="{{ key }}" type="{{ input == 'date' ? 'date' : (input == 'email' ? 'email' : (input == 'tel' || input == 'phone' ? 'tel' : 'text')) }}"
-                name="answers[{{ section }}][{{ key }}]" value="{{ value }}" class="{{ input_class }}"{{ if required }} required{{ /if }}>
+                name="answers[{{ section }}][{{ key }}]" value="{{ value }}" class="{{ input_class }}"{{ if required }}{{ if group == 'passport' }} x-bind:required="tab === 'manual' && !uploaded"{{ else }} required{{ /if }}{{ /if }}>
         {{ /if }}
     </div>
 {{ /if }}

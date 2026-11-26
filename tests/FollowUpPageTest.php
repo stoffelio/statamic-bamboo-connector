@@ -160,6 +160,34 @@ class FollowUpPageTest extends TestCase
     }
 
     /**
+     * Neither half of the either/or group may carry a plain `required`. The manual fields
+     * sit in a hidden tab panel, and a browser refuses to submit a form holding a required
+     * control it cannot focus — so an uploaded passport produced a button that did nothing
+     * and an error only the console saw.
+     */
+    #[Test]
+    public function it_never_requires_a_passport_field_the_tab_is_hiding()
+    {
+        Http::fake(['*' => Http::response(self::OPEN)]);
+
+        $html = $this->get('/follow-up/1795/the-token')->getContent();
+
+        preg_match_all('/<(?:input|select|textarea)[^>]*answers\[patient_1\]\[(?:first_name|date_of_birth|gender)\][^>]*>/s', $html, $manual);
+        preg_match('/<input[^>]*name="files\[passport\]\[\]"[^>]*>/s', $html, $upload);
+
+        $this->assertCount(3, $manual[0]);
+
+        foreach ($manual[0] as $field) {
+            $this->assertDoesNotMatchRegularExpression('/\srequired(?![-\w=])/', $field);
+            $this->assertStringContainsString('x-bind:required="tab === \'manual\' && !uploaded"', $field);
+        }
+
+        // The upload is the other half of the same rule, and it is hidden on the other tab.
+        $this->assertDoesNotMatchRegularExpression('/\srequired(?![-\w=])/', $upload[0] ?? '');
+        $this->assertStringContainsString('x-bind:required="tab === \'upload\' && !typed"', $upload[0] ?? '');
+    }
+
+    /**
      * The link is the only thing standing between this page and the internet, so a token in
      * the path must not ride out on a Referer header to a font or a captcha.
      */
