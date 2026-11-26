@@ -61,13 +61,13 @@
                 },
             }">
                 <div class="flex gap-2">
-                    <select x-model="dial" class="h-10 w-32 rounded-md border-2 border-white bg-white px-2 py-1.5 text-black focus:border-highlight" aria-label="Country code">
+                    <select x-model="dial" class="h-10 w-28 shrink-0 rounded-md border-2 border-white bg-white px-2 py-1.5 text-black focus:border-highlight" aria-label="Country code">
                         {{ foreach:dialling_codes as="region|country" }}
                             <option value="{{ country:code }}">+{{ country:code }} {{ country:name }}</option>
                         {{ /foreach:dialling_codes }}
                     </select>
                     <input id="{{ key }}" type="tel" inputmode="tel" x-model="number" placeholder="81 234 5678"
-                        class="{{ input_class }}"{{ if required }} required{{ /if }}>
+                        class="min-w-0 flex-1 {{ input_class }}"{{ if required }} required{{ /if }}>
                 </div>
                 <input type="hidden" name="answers[{{ section }}][{{ key }}]" x-bind:value="combined">
             </div>

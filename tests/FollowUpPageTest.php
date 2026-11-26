@@ -136,6 +136,26 @@ class FollowUpPageTest extends TestCase
     }
 
     /**
+     * The widest of the 245 options is "+599 Bonaire, Sint Eustatius and Saba", and a
+     * select sizes itself to its widest option — which pushed the number input out of the
+     * row entirely on anything narrower than a desk.
+     */
+    #[Test]
+    public function it_keeps_the_country_select_from_sizing_itself_to_its_longest_option()
+    {
+        Http::fake(['*' => Http::response(self::OPEN)]);
+
+        $html = $this->get('/follow-up/1795/the-token')->getContent();
+
+        preg_match('/<select[^>]*aria-label="Country code"[^>]*>/', $html, $select);
+        preg_match('/<input[^>]*type="tel"[^>]*>/s', $html, $number);
+
+        $this->assertStringContainsString('w-28', $select[0] ?? '');
+        $this->assertStringContainsString('shrink-0', $select[0] ?? '');
+        $this->assertStringContainsString('min-w-0', $number[0] ?? '');
+    }
+
+    /**
      * The link is the only thing standing between this page and the internet, so a token in
      * the path must not ride out on a Referer header to a font or a captcha.
      */
