@@ -115,6 +115,27 @@ class FollowUpPageTest extends TestCase
     }
 
     /**
+     * The control needs the dialling codes, and only a CRM new enough to send them has
+     * them. Until that one is deployed the field is still a phone field, not a text box.
+     */
+    #[Test]
+    public function it_falls_back_to_a_plain_tel_input_when_no_codes_arrive()
+    {
+        $withoutCodes = self::OPEN;
+        $withoutCodes['sections'][0]['fields'][1] = [
+            'key' => 'phone', 'type' => 'patient', 'label' => 'Phone Number',
+            'input' => 'phone', 'value' => '', 'required' => true,
+        ];
+
+        Http::fake(['*' => Http::response($withoutCodes)]);
+
+        $this->get('/follow-up/1795/the-token')
+            ->assertSee('type="tel"', false)
+            ->assertSee('name="answers[patient_1][phone]"', false)
+            ->assertDontSee('Country code');
+    }
+
+    /**
      * The link is the only thing standing between this page and the internet, so a token in
      * the path must not ride out on a Referer header to a font or a captcha.
      */

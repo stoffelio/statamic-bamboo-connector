@@ -50,7 +50,7 @@
             {{ label }}{{ if required }} <sup aria-label="Required">*</sup>{{ /if }}
         </label>
 
-        {{ if input == 'tel' }}
+        {{ if dialling_codes }}
             <div x-data="{
                 dial: '{{ dialling_codes:TH:code ?? '' }}',
                 number: '{{ value }}',
@@ -83,7 +83,7 @@
                 class="w-full px-4 py-1.5 bg-white text-black border-2 border-white rounded-md focus:border-highlight"
                 {{ if required }}required{{ /if }}>{{ value }}</textarea>
         {{ else }}
-            <input id="{{ key }}" type="{{ input == 'date' ? 'date' : (input == 'email' ? 'email' : 'text') }}"
+            <input id="{{ key }}" type="{{ input == 'date' ? 'date' : (input == 'email' ? 'email' : (input == 'tel' || input == 'phone' ? 'tel' : 'text')) }}"
                 name="answers[{{ section }}][{{ key }}]" value="{{ value }}" class="{{ input_class }}"{{ if required }} required{{ /if }}>
         {{ /if }}
     </div>
