@@ -13,6 +13,23 @@ abstract class TestCase extends AddonTestCase
 
     protected string $addonServiceProvider = ServiceProvider::class;
 
+    /**
+     * Every Statamic site has a layout and the follow-up page renders inside it, so the
+     * tests need one too — otherwise they would prove the page renders somewhere no site
+     * actually looks like.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $layout = resource_path('views/layout.antlers.html');
+
+        if (! file_exists($layout)) {
+            @mkdir(dirname($layout), recursive: true);
+            file_put_contents($layout, '<html><body><header>Site chrome</header>{{ template_content }}</body></html>');
+        }
+    }
+
     protected function form(array $fields, string $handle = 'booking')
     {
         return tap(Form::make($handle)->title('Booking')->formFields([

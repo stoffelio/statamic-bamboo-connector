@@ -34,6 +34,18 @@ class FollowUpPageTest extends TestCase
         ]],
     ];
 
+    /**
+     * Rendered inside the site's own layout rather than a page of its own, so it carries
+     * the header, the footer and everything else a page of the site carries.
+     */
+    #[Test]
+    public function it_renders_as_a_page_of_the_site()
+    {
+        Http::fake(['*' => Http::response(self::OPEN)]);
+
+        $this->get('/follow-up/1795/the-token')->assertOk()->assertSee('Site chrome');
+    }
+
     #[Test]
     public function it_renders_what_the_crm_asked_for()
     {

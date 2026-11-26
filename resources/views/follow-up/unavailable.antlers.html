@@ -1,0 +1,15 @@
+<div class="px-4 md:px-8">
+    <div class="max-w-lg mx-auto py-12 md:py-16">
+        {{ if state == 'submitted' }}
+            <h1 class="h2">Thank you — we have your details</h1>
+            <div class="bard mt-4">
+                <p>You have already sent these details, so there is nothing more to do here. We will be in touch about the rest.</p>
+            </div>
+        {{ else }}
+            <h1 class="h2">This form is no longer available</h1>
+            <div class="bard mt-4">
+                <p>This link cannot be used any more. If you still need to send us your details, reply to our email and we will send you a new one.</p>
+            </div>
+        {{ /if }}
+    </div>
+</div>

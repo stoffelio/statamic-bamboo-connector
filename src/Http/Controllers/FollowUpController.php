@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Statamic\View\View;
 use Throwable;
 
 /**
@@ -34,7 +35,11 @@ class FollowUpController extends Controller
         $state = $answer['state'] ?? 'unknown';
 
         return $state === 'open'
-            ? $this->render('form', ['request' => $answer, 'id' => $dataRequest, 'token' => $token])
+            ? $this->render('form', [
+                'request' => $answer,
+                'path' => $this->path($dataRequest, $token),
+                'errors' => session('bamboo_follow_up_error') ? ['We could not send that just now. Please try again in a moment.'] : [],
+            ])
             : $this->render('unavailable', ['state' => $state], 410);
     }
 
@@ -71,6 +76,11 @@ class FollowUpController extends Controller
      * @param  array<int, array{key: string, file: mixed}>  $files
      * @return array<string, mixed>|null
      */
+    private function path(string $dataRequest, string $token): string
+    {
+        return trim(config('bamboo.follow_up_path', 'follow-up'), '/')."/{$dataRequest}/{$token}";
+    }
+
     private function ask(string $method, string $dataRequest, string $token, array $payload = [], array $files = [], string $path = ''): ?array
     {
         $url = rtrim((string) config('bamboo.url'), '/')."/api/data-requests/{$dataRequest}/{$token}{$path}";
@@ -142,12 +152,21 @@ class FollowUpController extends Controller
     }
 
     /**
+     * Rendered through Statamic rather than as a view of its own, so the page is a page of
+     * the site: the layout, the header, the footer and everything in the cascade, with
+     * only the middle of it coming from here.
+     *
      * @param  array<string, mixed>  $data
      */
     private function render(string $view, array $data, int $status = 200): Response
     {
-        return response()
-            ->view("bamboo-connector::follow-up.{$view}", $data, $status)
+        $html = (new View)
+            ->template(config('bamboo.follow_up_views', 'bamboo-connector::follow-up').'.'.$view)
+            ->layout(config('bamboo.follow_up_layout', 'layout'))
+            ->with($data)
+            ->render();
+
+        return response($html, $status)
             // A token in the path otherwise leaks to every third-party origin the page
             // loads — a font, a captcha — through the Referer header.
             ->header('Referrer-Policy', 'no-referrer')

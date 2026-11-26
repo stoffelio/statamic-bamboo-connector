@@ -18,6 +18,13 @@ return [
     // organization's follow_up_base_url, and builds its links from it.
     'follow_up_path' => env('BAMBOO_FOLLOW_UP_PATH', 'follow-up'),
 
+    // The page renders inside the site's own layout, so it carries the header, the footer
+    // and everything else a page of the site carries. Publish the templates to restyle
+    // them: they land in resources/views, where a site's Tailwind can also see them.
+    'follow_up_layout' => 'layout',
+
+    'follow_up_views' => 'bamboo-connector::follow-up',
+
     'organization_field' => 'target_organization',
 
     'organization_id_field' => 'crm_id',

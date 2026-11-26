@@ -120,9 +120,15 @@ The CRM composes what to ask, so a question added there needs no deploy here. Th
 renders patient fields, file fields, free-text questions, and a **passport group** that
 offers an upload *or* the fields it would have filled, whichever the patient prefers.
 
-Publish the templates to restyle them:
+It renders **inside the site's own layout**, through Statamic rather than as a page of its
+own, so it carries the header, the footer and everything else in the cascade. The shipped
+templates are deliberately plain — publish them and they land in `resources/views`, where
+they can use the site's own partials and where a site's Tailwind can finally see their
+classes:
 
     php artisan vendor:publish --tag=bamboo-views
+
+`bamboo.follow_up_layout` names the layout, `layout` by default.
 
 Two things it does that are not optional. It sends `Referrer-Policy: no-referrer` and
 `X-Robots-Tag: noindex`, because a token in a URL otherwise leaks to every third-party
