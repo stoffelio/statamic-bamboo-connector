@@ -82,8 +82,8 @@ class FollowUpPageTest extends TestCase
         $response = $this->get('/follow-up/1795/the-token');
 
         $response->assertSee('files[passport][]', false)
-            ->assertSee('Upload my passport')
-            ->assertSee('Type the details')
+            ->assertSee('Upload Passport')
+            ->assertSee('Manual Entry')
             ->assertSee('answers[patient_1][date_of_birth]', false)
             ->assertSee('role="tablist"', false);
     }

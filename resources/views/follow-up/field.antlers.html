@@ -13,13 +13,13 @@
                 x-bind:class="tab === 'upload' ? 'border-primary font-semibold' : 'border-transparent'"
                 x-bind:aria-selected="tab === 'upload'"
                 x-on:click="tab = 'upload'">
-                Upload my passport
+                Upload Passport
             </button>
             <button type="button" role="tab" class="-mb-px border-b-2 px-4 py-2 text-sm"
-                x-bind:class="tab === 'typing' ? 'border-primary font-semibold' : 'border-transparent'"
-                x-bind:aria-selected="tab === 'typing'"
-                x-on:click="tab = 'typing'">
-                Type the details
+                x-bind:class="tab === 'manual' ? 'border-primary font-semibold' : 'border-transparent'"
+                x-bind:aria-selected="tab === 'manual'"
+                x-on:click="tab = 'manual'">
+                Manual Entry
             </button>
         </div>
 
@@ -27,7 +27,7 @@
             <input type="file" name="files[{{ key }}][]" accept="image/*,application/pdf" class="{{ file_class }}">
         </div>
 
-        <div class="grid gap-4 pt-4 md:grid-cols-2" x-show="tab === 'typing'" x-cloak="display" role="tabpanel">
+        <div class="grid gap-4 pt-4 md:grid-cols-2" x-show="tab === 'manual'" x-cloak="display" role="tabpanel">
             {{ fields }}
                 {{ partial src="bamboo-connector::follow-up.field" :section="section" /}}
             {{ /fields }}
