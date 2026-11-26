@@ -89,44 +89,50 @@ costing the whole submission — the lead matters more than the attachment.
 
 ## Two-step forms
 
-A short form that captures the lead, and a longer one that appears the moment it lands and
-appends to the ticket the first one opened.
+A short form captures the lead, and the CRM decides where the rest of it is asked for.
 
-Mark the first form as expecting a second, in its own YAML rather than as a field — what
+Mark the first form as expecting a follow-up, in its own YAML rather than as a field — what
 makes a form a first step was decided when it was built, and a hidden field would let
 whoever is filling it in decide instead:
 
     bamboo_follow_up: true
 
-That form is then sent **in the request that submitted it**, not from the queue, because the
-page needs the ticket id and the continuation token that come back with it. They ride back
-in the submission JSON as `bamboo_ticket` and `bamboo_continuation`, set after the
-submission was saved so neither is written to disk. The timeout is short
-(`bamboo.first_step_timeout`, four seconds) and every failure is swallowed: the connection
-job still sends the lead, and only the offer of a second step is lost.
+That form is sent **in the request that submitted it**, not from the queue, because the
+page is waiting on the answer. The CRM issues a data request for the ticket and hands back
+its link, which rides home in the submission JSON as `bamboo_follow_up_url` — set after the
+submission was saved, so it is never written to disk. The page then sends the visitor there.
 
-The second form carries both values back as hidden fields:
-
-    -
-      handle: bamboo_ticket
-      field: { type: hidden, display: Ticket }
-    -
-      handle: bamboo_continuation
-      field: { type: hidden, display: Continuation }
-
-A submission carrying them is posted to `POST /api/submissions/{ticket}/continue` instead,
-and the CRM refuses it once the step has been completed. Every `bamboo_*` handle is stripped
-from the payload, so none of this reaches the CRM as patient data.
+The CRM puts the same link in its automatic reply, so there is one page reached two ways and
+somebody who closes the tab can finish from their inbox. Nothing is lost when the CRM does
+not answer in time either: the timeout is short (`bamboo.first_step_timeout`, four seconds),
+the connection job still delivers the submission, and the email still carries the link.
 
 A first step carrying a file upload is left to the queue, since an inline send is invisible
-to the countdown that keeps the temporary files alive. It will not offer a second step.
+to the countdown that keeps the temporary files alive. It will not hand off.
 
-**Rendering:** whatever renders these two forms has to fill the hidden fields from the first
-step's response, and must not let Alpine bind a hidden input — a form's `x-data` carries each
-field's default as it was written, so a binding posts `current_url` where the input holds the
-resolved URL.
+## The follow-up page
 
-## Retries
+The addon ships the page the CRM links to, at `/{bamboo.follow_up_path}/{id}/{token}` —
+`follow-up` by default. Tell the CRM the same path, as the organization's
+`follow_up_base_url`, and it builds its links from it.
+
+The CRM composes what to ask, so a question added there needs no deploy here. The page
+renders patient fields, file fields, free-text questions, and a **passport group** that
+offers an upload *or* the fields it would have filled, whichever the patient prefers.
+
+Publish the templates to restyle them:
+
+    php artisan vendor:publish --tag=bamboo-views
+
+Two things it does that are not optional. It sends `Referrer-Policy: no-referrer` and
+`X-Robots-Tag: noindex`, because a token in a URL otherwise leaks to every third-party
+origin the page loads. And it must be **excluded from static caching** — it is different for
+every visitor, and a cached copy cannot tell somebody their link has already been used:
+
+    // config/statamic/static_caching.php
+    'exclude' => ['urls' => ['/follow-up/*']],
+
+## Retries## Retries
 
 The job is queued, retried five times with a growing backoff, and logs through `failed()`
 when it finally gives up. Retrying is safe: the CRM treats `external_id` as idempotent and

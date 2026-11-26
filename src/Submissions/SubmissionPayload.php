@@ -26,6 +26,9 @@ class SubmissionPayload
 
     public const CONTINUATION = 'bamboo_continuation';
 
+    /** Where the CRM says the rest of this submission is asked for. */
+    public const FOLLOW_UP_URL = 'bamboo_follow_up_url';
+
     /** @param  array<int, Attachment>  $attachments */
     public function __construct(
         private Submission $submission,

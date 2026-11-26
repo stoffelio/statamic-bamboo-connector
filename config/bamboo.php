@@ -14,6 +14,10 @@ return [
 
     'date_format' => 'j F Y',
 
+    // Where the follow-up page lives on this site. The CRM is told the same path, as the
+    // organization's follow_up_base_url, and builds its links from it.
+    'follow_up_path' => env('BAMBOO_FOLLOW_UP_PATH', 'follow-up'),
+
     'organization_field' => 'target_organization',
 
     'organization_id_field' => 'crm_id',

@@ -16,6 +16,8 @@ class ServiceProvider extends AddonServiceProvider
         SubmissionFinalized::class => [SendFirstStep::class],
     ];
 
+    protected $viewNamespace = 'bamboo-connector';
+
     protected $vite = [
         'input' => ['resources/js/cp.js'],
         'publicDirectory' => 'resources/dist',
@@ -28,5 +30,9 @@ class ServiceProvider extends AddonServiceProvider
         $this->publishes([
             __DIR__.'/../config/bamboo.php' => config_path('bamboo.php'),
         ], 'bamboo-config');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/bamboo-connector'),
+        ], 'bamboo-views');
     }
 }

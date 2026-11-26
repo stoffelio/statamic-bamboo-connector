@@ -13,18 +13,32 @@ use Stoffelio\BambooConnector\BambooConnector;
 class FirstStepTest extends TestCase
 {
     #[Test]
-    public function it_hands_the_page_a_ticket_and_a_token_to_carry_into_the_second_step()
+    public function it_hands_the_page_somewhere_to_send_the_visitor_next()
     {
-        Http::fake(['*' => Http::response(['ticket_id' => 42, 'continuation_token' => 'the-token'], 201)]);
+        Http::fake(['*' => Http::response([
+            'ticket_id' => 42,
+            'data_request_url' => 'https://crm.example.com/follow-up/1795/the-token',
+        ], 201)]);
 
         $submission = $this->submitFirstStep();
 
         $this->assertSame(42, $submission->get('bamboo_ticket'));
-        $this->assertSame('the-token', $submission->get('bamboo_continuation'));
+        $this->assertSame('https://crm.example.com/follow-up/1795/the-token', $submission->get('bamboo_follow_up_url'));
 
         // Whatever is set on the submission after it was saved is what the response
-        // carries, and nothing more: the page reads these two out of the JSON.
-        $this->assertArrayHasKey('bamboo_continuation', $submission->values()->all());
+        // carries, and nothing more: the page reads this out of the JSON.
+        $this->assertArrayHasKey('bamboo_follow_up_url', $submission->values()->all());
+    }
+
+    #[Test]
+    public function it_sends_the_visitor_nowhere_when_the_crm_offered_nothing()
+    {
+        Http::fake(['*' => Http::response(['ticket_id' => 42], 201)]);
+
+        $submission = $this->submitFirstStep();
+
+        // The lead is in; the follow-up will arrive by email instead.
+        $this->assertNull($submission->get('bamboo_follow_up_url'));
     }
 
     /**
@@ -35,21 +49,24 @@ class FirstStepTest extends TestCase
     #[Test]
     public function it_does_not_write_the_token_to_disk()
     {
-        Http::fake(['*' => Http::response(['ticket_id' => 42, 'continuation_token' => 'the-token'], 201)]);
+        Http::fake(['*' => Http::response([
+            'ticket_id' => 42,
+            'data_request_url' => 'https://crm.example.com/follow-up/1795/the-token',
+        ], 201)]);
 
         $submission = $this->submitFirstStep();
 
         $stored = file_get_contents($submission->path());
 
         $this->assertStringNotContainsString('the-token', $stored);
-        $this->assertStringNotContainsString('bamboo_continuation', $stored);
+        $this->assertStringNotContainsString('bamboo_follow_up_url', $stored);
         $this->assertStringContainsString('first_name: Jane', $stored);
     }
 
     #[Test]
     public function it_sends_the_first_step_once()
     {
-        Http::fake(['*' => Http::response(['ticket_id' => 42, 'continuation_token' => 'the-token'], 201)]);
+        Http::fake(['*' => Http::response(['ticket_id' => 42, 'data_request_url' => 'https://crm.example.com/follow-up/1/t'], 201)]);
 
         $this->submitFirstStep();
 
@@ -70,8 +87,8 @@ class FirstStepTest extends TestCase
         $submission = $this->submitFirstStep();
 
         // The inline attempt failed, so the connection job sent it instead — the lead is
-        // in the CRM and only the offer of a second step was lost.
-        $this->assertNull($submission->get('bamboo_continuation'));
+        // in the CRM and only the hand-off to the follow-up was lost.
+        $this->assertNull($submission->get('bamboo_follow_up_url'));
         Http::assertSentCount(2);
     }
 
@@ -79,7 +96,7 @@ class FirstStepTest extends TestCase
     public function it_leaves_a_first_step_carrying_a_file_to_the_queue()
     {
         Storage::fake('local');
-        Http::fake(['*' => Http::response(['ticket_id' => 42, 'continuation_token' => 'the-token'], 201)]);
+        Http::fake(['*' => Http::response(['ticket_id' => 42, 'data_request_url' => 'https://crm.example.com/follow-up/1/t'], 201)]);
 
         $form = $this->connectedForm([
             $this->field('first_name', ['type' => 'short_answer', 'display' => 'First Name']),
@@ -97,7 +114,7 @@ class FirstStepTest extends TestCase
         // Sent, but by the job: an inline send is invisible to the countdown that keeps
         // the upload alive, so a first step with a file waits its turn.
         Http::assertSentCount(1);
-        $this->assertNull($submission->get('bamboo_continuation'));
+        $this->assertNull($submission->get('bamboo_follow_up_url'));
     }
 
     #[Test]
@@ -116,7 +133,7 @@ class FirstStepTest extends TestCase
         // Sent by the job rather than in the request: nothing on the submission means
         // nothing was waiting on the answer.
         $this->assertNull($submission->get('bamboo_ticket'));
-        $this->assertNull($submission->get('bamboo_continuation'));
+        $this->assertNull($submission->get('bamboo_follow_up_url'));
         Http::assertSentCount(1);
     }
 

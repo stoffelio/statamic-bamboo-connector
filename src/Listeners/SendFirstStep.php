@@ -53,11 +53,14 @@ class SendFirstStep
         // Set after the submission was saved, so these ride back in the response without
         // being written to disk. They must not start with an underscore: Statamic keeps
         // those keys internal and strips them from the response, which is the one place
-        // these are any use.
+        // they are any use.
         $submission->set(SubmissionPayload::TICKET, $response->json('ticket_id'));
 
-        if (filled($token = $response->json('continuation_token'))) {
-            $submission->set(SubmissionPayload::CONTINUATION, $token);
+        // Where the rest of it is asked for. The CRM issues that page itself and puts the
+        // same link in the automatic reply, so a visitor who closes the tab can finish from
+        // their inbox instead.
+        if (filled($url = $response->json('data_request_url'))) {
+            $submission->set(SubmissionPayload::FOLLOW_UP_URL, $url);
         }
     }
 
