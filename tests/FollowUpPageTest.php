@@ -28,7 +28,8 @@ class FollowUpPageTest extends TestCase
                             'options' => ['female' => 'Female', 'male' => 'Male']],
                     ],
                 ],
-                ['key' => 'phone', 'type' => 'patient', 'label' => 'Phone Number', 'input' => 'text', 'value' => '', 'required' => true],
+                ['key' => 'phone', 'type' => 'patient', 'label' => 'Phone Number', 'input' => 'tel', 'value' => '', 'required' => true,
+                    'dialling_codes' => ['TH' => ['name' => 'Thailand', 'code' => 66], 'GB' => ['name' => 'United Kingdom', 'code' => 44]]],
                 ['key' => 'anything_else', 'type' => 'question', 'label' => 'Anything else?', 'input' => 'textarea', 'value' => '', 'required' => false],
             ],
         ]],
@@ -81,9 +82,36 @@ class FollowUpPageTest extends TestCase
         $response = $this->get('/follow-up/1795/the-token');
 
         $response->assertSee('files[passport][]', false)
-            ->assertSee('I would rather type them in')
+            ->assertSee('Upload my passport')
+            ->assertSee('Type the details')
             ->assertSee('answers[patient_1][date_of_birth]', false)
-            ->assertSee('Upload my passport instead');
+            ->assertSee('role="tablist"', false);
+    }
+
+    #[Test]
+    public function it_shows_which_enquiry_the_request_belongs_to()
+    {
+        Http::fake(['*' => Http::response(self::OPEN + ['ticket_id' => 4242])]);
+
+        $this->get('/follow-up/1795/the-token')->assertSee('Enquiry #4242');
+    }
+
+    /**
+     * A number only a Thai phone could dial is no use to a clinic ringing from elsewhere,
+     * so the country is asked for rather than hoped for.
+     */
+    #[Test]
+    public function it_asks_for_a_phone_number_with_its_country_code()
+    {
+        Http::fake(['*' => Http::response(self::OPEN)]);
+
+        $response = $this->get('/follow-up/1795/the-token');
+
+        $response->assertSee('+66 Thailand', false)
+            ->assertSee('+44 United Kingdom', false)
+            // The two controls post as one value, in the shape the CRM stores.
+            ->assertSee('x-bind:value="combined"', false)
+            ->assertSee('name="answers[patient_1][phone]"', false);
     }
 
     /**
