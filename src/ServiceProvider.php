@@ -5,11 +5,16 @@ namespace Stoffelio\BambooConnector;
 use Statamic\Events\SubmissionFinalized;
 use Statamic\Providers\AddonServiceProvider;
 use Stoffelio\BambooConnector\Listeners\SendFirstStep;
+use Stoffelio\BambooConnector\Modifiers\Flag;
 
 class ServiceProvider extends AddonServiceProvider
 {
     protected $formConnectors = [
         BambooConnector::class,
+    ];
+
+    protected $modifiers = [
+        Flag::class,
     ];
 
     protected $listen = [

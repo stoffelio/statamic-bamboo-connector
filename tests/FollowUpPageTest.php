@@ -107,8 +107,10 @@ class FollowUpPageTest extends TestCase
 
         $response = $this->get('/follow-up/1795/the-token');
 
-        $response->assertSee('+66 Thailand', false)
-            ->assertSee('+44 United Kingdom', false)
+        $response->assertSee('Thailand (+66)', false)
+            ->assertSee('United Kingdom (+44)', false)
+            // Closed, it shows a flag and a code; open, the whole country name.
+            ->assertSee("data-short=\"\u{1F1F9}\u{1F1ED} +66\"", false)
             // The two controls post as one value, in the shape the CRM stores.
             ->assertSee('x-bind:value="combined"', false)
             ->assertSee('name="answers[patient_1][phone]"', false);
@@ -150,8 +152,10 @@ class FollowUpPageTest extends TestCase
         preg_match('/<select[^>]*aria-label="Country code"[^>]*>/', $html, $select);
         preg_match('/<input[^>]*type="tel"[^>]*>/s', $html, $number);
 
-        $this->assertStringContainsString('w-28', $select[0] ?? '');
-        $this->assertStringContainsString('shrink-0', $select[0] ?? '');
+        // The select is an invisible overlay on a fixed-width box, so its own width can
+        // never push the number input out of the row however long an option is.
+        $this->assertStringContainsString('absolute inset-0', $select[0] ?? '');
+        $this->assertStringContainsString('opacity-0', $select[0] ?? '');
         $this->assertStringContainsString('min-w-0', $number[0] ?? '');
     }
 
