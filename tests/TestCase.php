@@ -24,11 +24,9 @@ abstract class TestCase extends AddonTestCase
 
         $layout = resource_path('views/layout.antlers.html');
 
-        if (! file_exists($layout)) {
-            @mkdir(dirname($layout), recursive: true);
-            file_put_contents($layout, '<html><head><title>{{ title }}</title></head>'
-                .'<body><header>Site chrome</header>{{ template_content }}</body></html>');
-        }
+        @mkdir(dirname($layout), recursive: true);
+        file_put_contents($layout, '<html><head><title>{{ title }}</title></head>'
+            .'<body><header>Site chrome</header>{{ template_content }}</body></html>');
     }
 
     protected function form(array $fields, string $handle = 'booking')
